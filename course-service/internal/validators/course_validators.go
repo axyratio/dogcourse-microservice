@@ -32,8 +32,8 @@ type ResponseCourse struct {
 	Address     string `json:"address"`
 	Province	string `json:"province"`
 	PostalCode  string `json:"postal_code"`
+	Price	   float32   `json:"price"`
+	PaymentsName string    `json:"payments_name"`
+	PaymentsMethod string    `json:"payments_method"`
 	UserID      int64  `json:"user_id"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-	DeletedAt   string `json:"deleted_at,omitempty"`
 }

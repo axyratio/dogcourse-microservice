@@ -3,6 +3,8 @@ package controllers
 import (
 	"course-service/internal/models"
 	"course-service/internal/repositories"
+	"course-service/internal/validators"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -29,41 +31,127 @@ func GetCourseByID(c *gin.Context) {
 }
 
 func CreateCourse(c *gin.Context) {
-	var course models.Course
-	if err := c.ShouldBindJSON(&course); err != nil {
+	var validator validators.CreateCourseValidator
+	if err := c.ShouldBindJSON(&validator); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	fmt.Println(validator.PaymentsName)
+
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id not found in context"})
+		return
+	}
+	userIDUint, ok := userID.(uint)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id format in context"})
+		return
+	}
+
+
+	fmt.Printf("Type: %T, Value: %v\n", userID, userID)
+	course := models.Course{
+		CourseName:     validator.CourseName,
+		Description:    validator.Description,
+		Address:      validator.Address,
+		Province:     validator.Province,
+		PostalCode:   validator.PostalCode,
+		Price:        validator.Price,
+		PaymentsName:   validator.PaymentsName,
+		PaymentsMethod: validator.PaymentsMethod,
+		UserID:         userIDUint,
+	}
+
 	if err := repositories.CreateCourse(&course); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, course)
+
+	response := validators.ResponseCourse{
+		CourseID:    int64(course.ID),
+		CourseName:  course.CourseName,
+		Description: course.Description,
+		Address:     course.Address,
+		Province:    course.Province,
+		PostalCode:  course.PostalCode,
+		PaymentsMethod: course.PaymentsMethod,
+		PaymentsName: course.PaymentsName,
+		Price:       course.Price,
+		UserID:      int64(course.UserID),
+	}
+
+	c.JSON(http.StatusCreated, response)
 }
 
 func UpdateCourse(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	var course models.Course
-	if err := c.ShouldBindJSON(&course); err != nil {
+	var validator validators.UpdateCourseValidator
+
+	if err := c.ShouldBindJSON(&validator); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	course.ID = uint(id)
-	if err := repositories.UpdateCourse(&course); err != nil {
+
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id not found in context"})
+		return
+	}
+	userIDUint, ok := userID.(uint)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id format in context"})
+		return
+	}
+
+	course := models.Course{
+		ID:           uint(id),
+		CourseName:     validator.CourseName,
+		Description:    validator.Description,
+		Address:      validator.Address,
+		Province:     validator.Province,
+		PostalCode:   validator.PostalCode,
+		Price:        validator.Price,
+		PaymentsName:   validator.PaymentsName,
+		PaymentsMethod: validator.PaymentsMethod,
+		UserID:         userIDUint,
+	}
+
+	if err := repositories.UpdateCourse(&course, userIDUint); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, course)
+
+	response := validators.ResponseCourse{
+		CourseID:    int64(course.ID),
+		CourseName:  course.CourseName,
+		Description: course.Description,
+		Address:     course.Address,
+		Province:    course.Province,
+		PostalCode:  course.PostalCode,
+		UserID:      int64(course.UserID),
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func DeleteCourse(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	if err := repositories.DeleteCourse(uint(id)); err != nil {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id not found in context"})
+		return
+	}
+	userIDUint, ok := userID.(uint)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id format in context"})
+		return
+	}
+	if err := repositories.DeleteCourse(uint(id), userIDUint); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
-
-	
 
 	c.JSON(http.StatusOK, gin.H{"message": "คอร์สถูกลบสำเร็จ"})
 }

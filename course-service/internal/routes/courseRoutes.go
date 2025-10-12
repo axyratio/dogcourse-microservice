@@ -9,12 +9,12 @@ import (
 
 func CourseRoutes(r *gin.Engine) {
 	course := r.Group("/courses")
-	course.Use(middleware.JWTAuth())
+	course.Use(middleware.AuthMiddleware())
 	{
-		course.GET("", controllers.GetAllCourses)
-		course.GET("/:id", controllers.GetCourseByID)
-		course.POST("", controllers.CreateCourse)
-		course.PATCH("/:id", controllers.UpdateCourse)
-		course.DELETE("/:id", controllers.DeleteCourse)
+		course.GET("", middleware.UserAuth(), controllers.GetAllCourses)
+		course.GET("/:id", middleware.UserAuth(), controllers.GetCourseByID)
+		course.POST("", middleware.UserAuth(), controllers.CreateCourse)
+		course.PATCH("/:id", middleware.UserAuth(), controllers.UpdateCourse)
+		course.DELETE("/:id", middleware.UserAuth(),  controllers.DeleteCourse)
 	}
 }

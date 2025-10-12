@@ -11,6 +11,8 @@ type Course struct {
 	Province    string    `json:"province"`
 	PostalCode  string    `json:"postal_code"`
 	Price       float32   `json:"price"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	PaymentsName   string    `json:"payments_name"`
+	PaymentsMethod string    `json:"payments_method"`
+    CreatedAt *time.Time `gorm:"autoCreateTime" json:"-"`
+    UpdatedAt *time.Time `gorm:"autoUpdateTime" json:"-"`
 }
