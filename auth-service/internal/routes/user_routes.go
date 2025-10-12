@@ -1,16 +1,20 @@
 package routes
 
 import (
+	"github.com/gin-gonic/gin"
 	"auth-service/internal/controllers"
-
-	"github.com/gorilla/mux"
-	"gorm.io/gorm"
 )
 
-func RegisterUserRoutes(r *mux.Router, db *gorm.DB) {
-	authController := controllers.NewAuthController(db)
+func SetupRouter(handler *controllers.Handler) *gin.Engine {
+	r := gin.Default()
 
-	r.HandleFunc("/api/v1/auth/register", authController.Register).Methods("POST")
-	r.HandleFunc("/api/v1/auth/login", authController.Login).Methods("POST")
-	r.HandleFunc("/api/v1/auth/profile", authController.Profile).Methods("GET")
+	api := r.Group("/api")
+	{
+		api.POST("/register", handler.RegisterHandler)
+		api.POST("/login", handler.LoginHandler)
+		api.POST("/logout", handler.LogoutHandler)
+		api.GET("/verify", handler.VerifyTokenHandler)
+	}
+
+	return r
 }
