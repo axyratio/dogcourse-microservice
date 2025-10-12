@@ -6,6 +6,11 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: auth_db
+      TZ: Asia/Bangkok
+      LANG: C.UTF-8
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_general_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
     ports:
       - "3307:3306"  # host port 3307 -> container 3306
     volumes:
@@ -33,6 +38,11 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: course_db
+      TZ: Asia/Bangkok
+      LANG: C.UTF-8
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_general_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
     ports:
       - "3308:3306"  # host port 3307 -> container 3306
     volumes:
