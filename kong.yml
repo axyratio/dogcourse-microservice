@@ -1,4 +1,5 @@
 _format_version: "2.1"
+
 services:
   - name: auth-service
     url: http://auth-service:8081

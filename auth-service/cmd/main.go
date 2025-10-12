@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"auth-service/config"
+	"auth-service/internal/models"
 	"auth-service/internal/routes"
 
 	"github.com/gorilla/mux"
@@ -18,12 +19,22 @@ func main() {
 	}
 
 	db := config.ConnectDB()
-	sqlDB, err := db.DB()
-	if err != nil {
-		log.Fatal(err)
-	}
+	sqlDB, _ := db.DB()
 	defer sqlDB.Close()
 
+	// 🔹 Auto migrate models
+	db.AutoMigrate(&models.Role{}, &models.User{})
+
+	// 🔹 Seed role ถ้ายังไม่มี
+	var count int64
+	db.Model(&models.Role{}).Count(&count)
+	if count == 0 {
+		roles := []models.Role{
+			{ID: 1, RoleName: "admin"},
+			{ID: 2, RoleName: "user"},
+		}
+		db.Create(&roles)
+	}
 	r := mux.NewRouter()
 	routes.RegisterUserRoutes(r, db)
 
