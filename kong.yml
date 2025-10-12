@@ -7,3 +7,11 @@ services:
       - name: auth-route
         paths:
           - /auth
+
+  - name: course-service
+    url: http://course-service:8082
+    routes:
+      - name: course-route
+        paths:
+          - /courses
+        strip_path: false
