@@ -1,16 +1,15 @@
 services:
   auth-db:
-    image: postgres:15
+    image: mysql:8.0
     container_name: auth-db
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: auth_db
+      MYSQL_ROOT_PASSWORD: admin123456
+      MYSQL_DATABASE: auth_db
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - auth-data:/var/lib/postgresql/data
+      - auth-data:/var/lib/mysql
 
   auth-service:
     build: ./auth-service

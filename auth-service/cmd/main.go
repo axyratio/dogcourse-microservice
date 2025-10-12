@@ -13,26 +13,21 @@ import (
 )
 
 func main() {
-	// โหลด .env
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
 	}
 
-	// connect DB
 	db := config.ConnectDB()
 	sqlDB, err := db.DB()
 	if err != nil {
-		log.Fatal("Failed to get sql.DB:", err)
+		log.Fatal(err)
 	}
 	defer sqlDB.Close()
 
-	// router
 	r := mux.NewRouter()
 	routes.RegisterUserRoutes(r, db)
 
-	// health check
 	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	}).Methods("GET")
 
@@ -41,6 +36,6 @@ func main() {
 		port = "8081"
 	}
 
-	log.Printf("🚀 Auth service running on port %s", port)
+	log.Printf("Auth service running on port %s", port)
 	log.Fatal(http.ListenAndServe(":"+port, r))
 }
