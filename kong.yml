@@ -1,73 +1,8 @@
-_format_version: "3.0"
-_comment: "Declarative configuration for Kong Gateway for Microservices"
-
+_format_version: "2.1"
 services:
-# ==========================================================
-# 1. AUTH & USER SERVICE (จัดการผู้ใช้, Login, Register)
-# ==========================================================
-- name: auth-service-upstream
-  # ชี้ไปที่ชื่อ service ใน docker-compose.yml และ port ที่ auth-service รันอยู่ (สมมติรันที่ 8081)
-  url: http://auth-service:8081
-  routes:
-  # Route สำหรับ Login, Register, Logout (ส่วนใหญ่จะเป็น /api/v1/auth/...)
-  - name: auth-route
-    paths:
-      - /api/v1/auth/register
-      - /api/v1/auth/login
-      - /api/v1/auth/me
-    strip_path: false 
-    methods: [GET, POST, PUT, PATCH, DELETE]
-
-# ==========================================================
-# 2. BOOKING SERVICE (จัดการการจอง)
-# ==========================================================
-- name: booking-service-upstream
-  url: http://booking-service:8082
-  routes:
-    - name: booking-route
-      paths:
-        - /api/v1/bookings
-        - /api/v1/bookings/*
-      strip_path: false
-      methods: [GET, POST, PATCH]
-  plugins:
-    - name: jwt
-
-# ==========================================================
-# 2. DOG SERVICE 
-# ==========================================================
-- name: dog-service-upstream
-  url: http://dog_service:8084
-  routes:
-    - name: dog-route
-      paths:
-        - /api/v1/dogs
-        - /api/v1/dogs/*
-      strip_path: false
-      methods: [GET, POST, PATCH, DELETE]
-
-# ==========================================================
-# 3. COURSE SERVICE (จัดการคอร์สฝึก)
-# ==========================================================
-- name: course-service-upstream
-  url: http://course_service:8083 # สมมติรันที่ 8083
-  routes:
-  - name: course-route
-    paths:
-    - /api/v1/courses
-    strip_path: true
-    methods: [GET, POST, PUT, PATCH, DELETE]
-
-
-# ==========================================================
-# 4. Global Plugins (ใช้กับทุก Service หากไม่ระบุ 'service')
-# ==========================================================
-
-plugins:
-  - name: rate-limiting
-    config:
-      minute: 1000
-      policy: local
-      
-environment:
-  KONG_DECLARATIVE_CONFIG: /usr/local/kong/declarative/kong.yml
+  - name: auth-service
+    url: http://auth-service:8081
+    routes:
+      - name: auth-route
+        paths:
+          - /auth
