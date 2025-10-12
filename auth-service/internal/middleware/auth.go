@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"net/http"
+	"os"
 	"strings"
 
-	"booking-service/config"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -12,6 +12,7 @@ import (
 
 // JWTAuth ตรวจสอบ Authorization Header และ validate JWT
 func JWTAuth() gin.HandlerFunc {
+	JWT_SECRET := []byte(os.Getenv("JWT_SECRET"))
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -34,7 +35,7 @@ func JWTAuth() gin.HandlerFunc {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
-			return config.JWT_SECRET, nil
+			return JWT_SECRET, nil
 		})
 
 		if err != nil || !token.Valid {
