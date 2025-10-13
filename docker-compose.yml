@@ -93,7 +93,38 @@ services:
     networks:
       - backend
 
+  booking-db:
+    image: mysql:8
+    container_name: booking-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: booking_db
+      TZ: Asia/Bangkok
+      LANG: C.UTF-8
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_general_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+    ports:
+      - "3310:3306"  
+    volumes:
+      - booking-data:/var/lib/mysql
+    networks:
+      - backend
 
+
+  booking-service:
+    build: ./booking-service
+    ports:
+      - "8084:8084"
+    env_file:
+      - ./booking-service/.env
+    depends_on:
+      - booking-db
+    networks:
+      - backend
+
+      
   kong:
     image: kong:3.3
     container_name: kong
@@ -119,6 +150,7 @@ volumes:
   auth-data:
   course-data:
   dog-data:
+  booking-data:
 
 networks:
   backend:

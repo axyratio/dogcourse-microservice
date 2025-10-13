@@ -25,3 +25,11 @@ services:
         paths:
           - /dogs
         strip_path: false
+
+  - name: booking-service
+    url: http://booking-service:8084
+    routes:
+      - name: booking-route
+        paths:
+          - /courses/booking
+        strip_path: false
