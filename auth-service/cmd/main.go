@@ -15,6 +15,7 @@ func main() {
 	db := config.ConnectDB()
 	db.AutoMigrate(&models.User{}, &models.Role{})
 	fmt.Println("✅ Migrated user & role models")
+	config.SeedRoles(db)
 
 	repo := repositories.NewRepository(db)
 	handler := controllers.NewHandler(repo)

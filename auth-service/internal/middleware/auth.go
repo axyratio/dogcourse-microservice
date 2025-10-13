@@ -1,93 +1,122 @@
 package middleware
 
 import (
+	"auth-service/internal/utils"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
 
-
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
-// JWTAuth ตรวจสอบ Authorization Header และ validate JWT
-func JWTAuth() gin.HandlerFunc {
-	JWT_SECRET := []byte(os.Getenv("JWT_SECRET"))
+func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
+		fmt.Println(authHeader, "authheader")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing Authorization header"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
 			c.Abort()
 			return
 		}
 
-		// Bearer token
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Authorization header"})
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		if token == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token format"})
 			c.Abort()
 			return
 		}
 
-		tokenString := parts[1]
-
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, jwt.ErrSignatureInvalid
-			}
-			return JWT_SECRET, nil
-		})
-
-		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		userID, role, email, err := utils.VerifyToken(authHeader)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
 			return
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
-			c.Abort()
-			return
-		}
 
-		// เอา user_id และ role_id จาก token ใส่ context
-		if uid, ok := claims["user_id"].(float64); ok {
-			c.Set("user_id", uint(uid))
-		}
-		if rid, ok := claims["role_id"].(float64); ok {
-			c.Set("role_id", uint(rid))
-		}
-		
+		// ✅ เก็บข้อมูลไว้ใน context
+		c.Set("user_id", userID)
+		c.Set("role", role)
+		c.Set("email", email)
+
 		c.Next()
 	}
 }
 
-// UserAuth ตรวจสอบ role_id
-func UserAuth(allowedRoles ...uint) gin.HandlerFunc {
+func JWTAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		roleIDVal, exists := c.Get("role_id")
-		if !exists {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Missing role"})
-			c.Abort()
+		var jwtKey = []byte(os.Getenv("JWT_SECRET"))
+
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing Authorization header"})
 			return
 		}
 
-		roleID, ok := roleIDVal.(uint)
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+		claims := jwt.MapClaims{}
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+			return jwtKey, nil
+		})
+		if err != nil || !token.Valid {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			return
+		}
+
+		// ✅ ดึง user_id
+		userIDFloat, ok := claims["user_id"].(float64)
 		if !ok {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Invalid role type"})
-			c.Abort()
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token payload: missing user_id"})
+			return
+		}
+		userID := uint(userIDFloat)
+
+		// ✅ ดึง role (string) จาก token
+		role, ok := claims["role"].(string)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token payload: missing role"})
 			return
 		}
 
-		for _, r := range allowedRoles {
-			if r == roleID {
-				c.Next()
-				return
-			}
-		}
+		// ✨ เก็บลง context
+		c.Set("user_id", userID)
+		c.Set("role", role)
 
-		c.JSON(http.StatusForbidden, gin.H{"error": "Permission denied"})
-		c.Abort()
+		c.Next()
+	}
+}
+
+
+func AdminAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, exists := c.Get("role")
+		if !exists || role != "admin" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+
+
+
+
+
+
+func UserAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, exists := c.Get("role")
+		fmt.Println(role, "role in user auth middleware")
+		if !exists || role != "user" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+			c.Abort()
+			return
+		}
+		c.Next()
 	}
 }

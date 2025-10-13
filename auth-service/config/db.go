@@ -28,7 +28,6 @@ func ConnectDB() *gorm.DB {
 
 	DB = db
 
-	SeedRoles(DB)
 
 	return DB
 }
