@@ -7,6 +7,7 @@ services:
       - name: auth-route
         paths:
           - /auth
+        strip_path: true
 
   - name: course-service
     url: http://course-service:8082
@@ -14,4 +15,13 @@ services:
       - name: course-route
         paths:
           - /courses
+        strip_path: false   
+
+
+  - name: dog-service
+    url: http://dog-service:8083
+    routes:
+      - name: dog-route
+        paths:
+          - /dogs
         strip_path: false

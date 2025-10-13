@@ -62,6 +62,37 @@ services:
     networks:
       - backend
 
+  dog-db:
+    image: mysql:8
+    container_name: dog-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: dog_db
+      TZ: Asia/Bangkok
+      LANG: C.UTF-8
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_general_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+    ports:
+      - "3309:3306"  # host port 3307 -> container 3306
+    volumes:
+      - dog-data:/var/lib/mysql
+    networks:
+      - backend
+
+
+  dog-service:
+    build: ./dog-service
+    ports:
+      - "8083:8083"
+    env_file:
+      - ./dog-service/.env
+    depends_on:
+      - dog-db
+    networks:
+      - backend
+
 
   kong:
     image: kong:3.3
@@ -87,6 +118,7 @@ services:
 volumes:
   auth-data:
   course-data:
+  dog-data:
 
 networks:
   backend:

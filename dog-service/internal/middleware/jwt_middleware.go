@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"course-service/internal/utils"
+	"dog-service/internal/utils"
 	"fmt"
 	"net/http"
 	"os"
@@ -111,14 +111,32 @@ func AdminAuth() gin.HandlerFunc {
 
 
 func UserAuth() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		role, exists := c.Get("role")
-		fmt.Println(role, "role in user auth middleware")
-		if !exists || role != "user" {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
-			c.Abort()
-			return
-		}
-		c.Next()
-	}
+    return func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        if token == "" {
+            c.JSON(401, gin.H{"error": "Missing token"})
+            c.Abort()
+            return
+        }
+
+        userID, role, _, err := utils.VerifyToken(token)
+        if err != nil {
+            c.JSON(401, gin.H{"error": err.Error()})
+            c.Abort()
+            return
+        }
+
+        if role == "" {
+            c.JSON(403, gin.H{"error": "Access denied"})
+            c.Abort()
+            return
+        }
+
+        // ตั้งค่า context ให้ controller ใช้
+        c.Set("user_id", userID)
+        c.Set("role", role)
+
+        c.Next()
+    }
 }
+

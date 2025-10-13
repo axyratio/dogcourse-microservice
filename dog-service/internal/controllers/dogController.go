@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	"main/models"
-	"main/repositories"
-	"main/utils"
-	"main/validators"
+	"dog-service/internal/models"
+	"dog-service/internal/repositories"
+	"dog-service/internal/utils"
+	"dog-service/internal/validators"
 	"net/http"
 	"strconv"
 
@@ -12,20 +12,18 @@ import (
 )
 
 func GetAllDogByUserID(c *gin.Context) {
-
-	userIDInterface, exists := c.Get("user_id")
-
-	if !exists {
+	userID, err := utils.GetUserID(c)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	userID := userIDInterface.(uint)
-
 	dogs, err := repositories.GetAllDogByUserID(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถดึงข้อมูลสุนัขได้"})
+		return
 	}
+
 	c.JSON(http.StatusOK, dogs)
 }
 
@@ -50,23 +48,15 @@ func GetAllDogByUserID(c *gin.Context) {
 // }
 
 func CreateDog(c *gin.Context) {
-	// validate the request body add dog
 	var input validators.CreateDog
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	userIDInterface, exists := c.Get("user_id")
-
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "เป็นคนไม่มีสิทธิ์"})
-		return
-	}
-
-	userID, ok := userIDInterface.(uint)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+	userID, err := utils.GetUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
@@ -75,11 +65,11 @@ func CreateDog(c *gin.Context) {
 		Weight: input.Weight,
 		Gender: input.Gender,
 		Breed:  input.Breed,
-		UserID: userID, // เซ็ตตรงนี้เลย
+		UserID: userID,
 	}
 
 	if err := repositories.AddDog(&dog); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถเพิ่มหมาได้ แก้โค้ดด่วน"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถเพิ่มสุนัขได้"})
 		return
 	}
 
@@ -89,9 +79,11 @@ func CreateDog(c *gin.Context) {
 		Weight:  dog.Weight,
 		Breed:   dog.Breed,
 		Gender:  dog.Gender,
-		Message: "เพิ่มหมาสุดที่รักแล้ว",
+		Message: "เพิ่มสุนัขสำเร็จ",
 	})
 }
+
+
 
 func UpdateDogByID(c *gin.Context) {
 	// 1. แปลง id param เป็น uint
@@ -169,11 +161,10 @@ func UpdateDogByID(c *gin.Context) {
 
 	// 9. สำเร็จ
 	c.JSON(http.StatusOK, gin.H{
-		"message": "อัปเดตข้อมูลสุนัขสำเร็จ",
+		"message":        "อัปเดตข้อมูลสุนัขสำเร็จ",
 		"updated_fields": changes,
 	})
 }
-
 
 /*************  ✨ Windsurf Command ⭐  *************/
 // DeleteDogByID เป็นฟังก์ชันสำหรับลบสุนัขโดยระบุ id
@@ -213,5 +204,3 @@ func DeleteDogByID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "ลบข้อมูลสุนัขสำเร็จ (soft delete)"})
 }
-
-
