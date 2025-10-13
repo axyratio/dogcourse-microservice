@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"main/models"
-	"main/repositories"
-	"main/validators"
+	"review-service/internal/models"
+	"review-service/internal/repositories"
+	"review-service/internal/validators"
 	"net/http"
 	"strconv"
 

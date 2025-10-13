@@ -33,3 +33,12 @@ services:
         paths:
           - /courses/booking
         strip_path: false
+
+
+  - name: review-service
+    url: http://review-service:8085
+    routes:
+      - name: review-route
+        paths:
+          - /courses/review
+        strip_path: false

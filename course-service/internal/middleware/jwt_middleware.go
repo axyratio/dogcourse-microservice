@@ -57,7 +57,6 @@ func JWTAuth() gin.HandlerFunc {
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		// ใช้ MapClaims เพื่อดึงข้อมูลใน payload
 		claims := jwt.MapClaims{}
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			return jwtKey, nil
@@ -67,7 +66,7 @@ func JWTAuth() gin.HandlerFunc {
 			return
 		}
 
-		// ดึง user_id
+		// ✅ ดึง user_id
 		userIDFloat, ok := claims["user_id"].(float64)
 		if !ok {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token payload: missing user_id"})
@@ -75,17 +74,16 @@ func JWTAuth() gin.HandlerFunc {
 		}
 		userID := uint(userIDFloat)
 
-		// ดึง role_id
-		roleIDFloat, ok := claims["role_id"].(float64)
+		// ✅ ดึง role (string) จาก token
+		role, ok := claims["role"].(string)
 		if !ok {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token payload: missing role_id"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token payload: missing role"})
 			return
 		}
-		roleID := uint(roleIDFloat)
 
-		// เก็บ user_id และ role_id ลงใน context
+		// ✨ เก็บลง context
 		c.Set("user_id", userID)
-		c.Set("role", roleID)
+		c.Set("role", role)
 
 		c.Next()
 	}

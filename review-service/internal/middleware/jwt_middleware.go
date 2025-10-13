@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"dog-service/internal/utils"
+	"review-service/internal/utils"
 	"fmt"
 	"net/http"
 	"os"

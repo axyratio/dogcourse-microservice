@@ -124,6 +124,37 @@ services:
     networks:
       - backend
 
+  review-db:
+    image: mysql:8
+    container_name: review-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: review_db
+      TZ: Asia/Bangkok
+      LANG: C.UTF-8
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_general_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+    ports:
+      - "3311:3306"  
+    volumes:
+      - review-data:/var/lib/mysql
+    networks:
+      - backend
+
+   
+  review-service:
+    build: ./review-service
+    ports:
+      - "8085:8085"
+    env_file:
+      - ./review-service/.env
+    depends_on:
+      - review-db
+    networks:
+      - backend
+
       
   kong:
     image: kong:3.3
@@ -151,6 +182,7 @@ volumes:
   course-data:
   dog-data:
   booking-data:
+  review-data:
 
 networks:
   backend:
