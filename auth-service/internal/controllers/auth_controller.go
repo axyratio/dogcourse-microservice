@@ -4,6 +4,7 @@ import (
 	"auth-service/internal/models"
 	"auth-service/internal/utils"
 	"auth-service/internal/validators"
+	"errors"
 	"net/http"
 
 	"auth-service/internal/repositories"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 
@@ -234,9 +236,40 @@ func (h *Handler) VerifyTokenHandler(c *gin.Context) {
 		return
 	}
 
+	
+
+
 	c.JSON(http.StatusOK, gin.H{
 		"user_id": userID,
 		"role":    role,
 		"email":   email,
+	})
+}
+
+
+func (h *Handler) GetUserByIDHandler(c *gin.Context) {
+	uid, err := utils.GetUserID(c)
+	if err != nil {
+		// ไม่มี user_id ใน context หรือ type ไม่ถูก
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	user, err := h.Repo.GetUserByID(uid)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
+		return
+	}
+
+	fullName := strings.TrimSpace(user.Name + " " + user.LastName)
+
+	c.JSON(http.StatusOK, gin.H{
+		"user_id":   user.UserID,
+		"email":     user.Email,
+		"full_name": fullName,
 	})
 }

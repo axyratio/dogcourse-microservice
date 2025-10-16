@@ -13,13 +13,13 @@ import (
 func VerifyToken(token string) (uint, string, string, error) {
 	userServiceURL := os.Getenv("USER_SERVICE_URL")
 	if userServiceURL == "" {
-		userServiceURL = "http://localhost:8080" // ค่า default
+		userServiceURL = "http://localhost:8081" // ค่า default
 	}
 
 	// ✅ ตัด Bearer ออกก่อนถ้ามี (ป้องกันซ้ำ)
 	token = strings.TrimSpace(strings.TrimPrefix(token, "Bearer"))
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/auth/api/verify", userServiceURL), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api/verify", userServiceURL), nil)
 	if err != nil {
 		return 0, "", "", fmt.Errorf("failed to create request: %v", err)
 	}

@@ -1,15 +1,26 @@
 package main
 
 import (
-	"fmt"
 	"auth-service/config"
-	"auth-service/internal/routes"
-	"auth-service/internal/models"
 	"auth-service/internal/controllers"
+	"auth-service/internal/models"
 	"auth-service/internal/repositories"
+	"auth-service/internal/routes"
+	"fmt"
+	"log"
 
 	"os"
+
+	"github.com/joho/godotenv"
 )
+
+
+func init() {
+    if err := godotenv.Load(); err != nil {
+        // ถ้า deploy บน Docker/K8s ไม่มีไฟล์ .env ก็โอเค แต่ในเครื่องต้องมี
+        log.Println("WARN: .env not loaded:", err)
+    }
+}
 
 func main() {
 	db := config.ConnectDB()

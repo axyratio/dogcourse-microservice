@@ -1,8 +1,10 @@
 package routes
 
 import (
-	"github.com/gin-gonic/gin"
 	"auth-service/internal/controllers"
+	"auth-service/internal/middleware"
+
+	"github.com/gin-gonic/gin"
 )
 
 func SetupRouter(handler *controllers.Handler) *gin.Engine {
@@ -14,6 +16,7 @@ func SetupRouter(handler *controllers.Handler) *gin.Engine {
 		api.POST("/login", handler.LoginHandler)
 		api.POST("/logout", handler.LogoutHandler)
 		api.GET("/verify", handler.VerifyTokenHandler)
+		api.GET("/me", middleware.AuthMiddleware(), handler.GetUserByIDHandler)
 	}
 
 	return r
