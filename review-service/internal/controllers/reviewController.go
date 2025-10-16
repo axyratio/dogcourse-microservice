@@ -1,35 +1,36 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"review-service/internal/models"
 	"review-service/internal/repositories"
-	// "review-service/internal/service"
+	"review-service/internal/service"
 	"review-service/internal/validators"
 	"strconv"
-	// "strings"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 // CreateReview creates a new review.
-// func getAuthHeader(c *gin.Context) string {
-// 	// ใช้ค่า header ที่ middleware เก็บไว้ก่อน
-// 	if v, ok := c.Get("auth_header"); ok {
-// 		if s, ok2 := v.(string); ok2 && s != "" {
-// 			return s
-// 		}
-// 	}
-// 	h := c.GetHeader("Authorization")
-// 	if h == "" {
-// 		return ""
-// 	}
-// 	if !strings.HasPrefix(strings.ToLower(h), "bearer ") {
-// 		return "Bearer " + h
-// 	}
-// 	return h
-// }
+func getAuthHeader(c *gin.Context) string {
+	// ใช้ค่า header ที่ middleware เก็บไว้ก่อน
+	if v, ok := c.Get("auth_header"); ok {
+		if s, ok2 := v.(string); ok2 && s != "" {
+			return s
+		}
+	}
+	h := c.GetHeader("Authorization")
+	if h == "" {
+		return ""
+	}
+	if !strings.HasPrefix(strings.ToLower(h), "bearer ") {
+		return "Bearer " + h
+	}
+	return h
+}
 
 // func CreateReview(c *gin.Context) {
 // 	var review models.Review
@@ -136,7 +137,10 @@ func CreateReview(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "course_id ไม่ถูกต้อง"})
 		return
 	}
-	review.CourseID = uint(courseID)
+	uintCourseID := uint(courseID)
+	review.CourseID = uintCourseID
+
+
 
 	// ตรวจสอบว่าผู้ใช้นี้รีวิวคอร์สนี้ไปแล้วหรือยัง
 	existsAlready, err := repositories.CheckIfReviewed(review.UserID, review.CourseID)
@@ -148,6 +152,35 @@ func CreateReview(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "คุณได้รีวิวคอร์สนี้ไปแล้ว"})
 		return
 	}
+
+	authHeader := getAuthHeader(c)
+	if authHeader == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "missing Authorization header"})
+		return
+	}
+
+	booked, err := services.GetBookedRawID(courseIDParam, authHeader)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "ติดต่อ booking-service ไม่สำเร็จ"})
+		return
+	}
+
+	fmt.Println(booked, "status booked")
+	if !booked {
+		c.JSON(http.StatusForbidden, gin.H{"error": "คุณยังไม่ได้จองคอร์สนี้ จึงไม่สามารถรีวิวได้"})
+		return
+	}
+
+	if err := services.AssertCourseExistsRawID(courseIDParam, authHeader); err != nil {
+		if services.IsNotFound(err) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ไม่พบคอร์สนี้"})
+			return
+		}
+		c.JSON(http.StatusBadGateway, gin.H{"error": "ติดต่อ course-service ไม่สำเร็จ"})
+		return
+	}
+
+	
 
 	// ตรวจสอบความถูกต้อง
 	if err := validators.ValidateReview(review); err != nil {

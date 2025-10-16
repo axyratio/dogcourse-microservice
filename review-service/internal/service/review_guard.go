@@ -54,7 +54,9 @@ func AssertCourseExistsRawID(courseID string, authHeader string) error {
 	base := os.Getenv("COURSE_SERVICE_URL")
 	if base == "" { return fmt.Errorf("COURSE_SERVICE_URL not set") }
 	url := fmt.Sprintf("%s/courses/%s", trimSlash(base), courseID)
+	fmt.Println(url, "url courses")
 	_, err := doGET(url, authHeader, nil)
+
 	return err
 }
 
@@ -62,11 +64,13 @@ func AssertCourseExistsRawID(courseID string, authHeader string) error {
 func GetBookedRawID(courseID string, authHeader string) (bool, error) {
 	base := os.Getenv("BOOKING_SERVICE_URL")
 	if base == "" { return false, fmt.Errorf("BOOKING_SERVICE_URL not set") }
-	url := fmt.Sprintf("%s/courses/booked/%s", trimSlash(base), courseID)
+	url := fmt.Sprintf("%s/courses/booking/booked/%s", trimSlash(base), courseID)
 
+	fmt.Println(url, "check booked")
 	var resp struct {
 		Booked bool `json:"booked"`
 	}
+	
 	code, err := doGET(url, authHeader, &resp)
 	if err != nil {
 		// 404 = ไม่เคยจอง
@@ -79,5 +83,8 @@ func GetBookedRawID(courseID string, authHeader string) (bool, error) {
 		}
 		return false, err
 	}
+	fmt.Println(code, err, "status booked andd erorr")
+	fmt.Println(resp.Booked, "status booked")
+
 	return resp.Booked, nil
 }
