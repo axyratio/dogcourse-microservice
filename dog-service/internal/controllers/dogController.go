@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"dog-service/config"
 	"dog-service/internal/models"
 	"dog-service/internal/repositories"
 	"dog-service/internal/utils"
@@ -27,6 +28,26 @@ func GetAllDogByUserID(c *gin.Context) {
 	c.JSON(http.StatusOK, dogs)
 }
 
+func GetDogsBatch(c *gin.Context) {
+	var req validators.DogBatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	if len(req.DogIDs) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "dog_ids cannot be empty"})
+		return
+	}
+
+	var dogs []models.Dog
+	if err := config.DB.Where("dog_id IN ?", req.DogIDs).Find(&dogs).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot fetch dogs"})
+		return
+	}
+
+	c.JSON(http.StatusOK, dogs)
+}
 // func GetDogByID(c *gin.Context) {
 // 	idParam := c.Param("id")                            // ได้ string จาก URL
 // 	idUint64, err := strconv.ParseUint(idParam, 10, 64) // แปลงเป็น uint64

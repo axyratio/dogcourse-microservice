@@ -39,3 +39,7 @@ type ResponseDog struct {
 	Weight  float64 `json:"weight"`
 	Breed   string  `json:"breed"`
 }
+
+type DogBatchRequest struct {
+	DogIDs []uint `json:"dog_ids" binding:"required"`
+}
