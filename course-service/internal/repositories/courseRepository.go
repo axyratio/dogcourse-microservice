@@ -37,9 +37,9 @@ func UpdateCourse(course *models.Course, userID uint) error {
 		return result.Error
 	}
 
-	if existingCourse.UserID != userID {
-		return errors.New("unauthorized: you do not own this course")
-	}
+	// if existingCourse.UserID != userID {
+	// 	return errors.New("unauthorized: you do not own this course")
+	// }
 
 	return config.DB.Save(course).Error
 }
@@ -50,8 +50,8 @@ func DeleteCourse(id uint, userID uint) error {
 	if result.Error != nil {
 		return result.Error
 	}
-	if result.RowsAffected == 0 {
-		return errors.New("course not found or unauthorized")
-	}
+	// if result.RowsAffected == 0 {
+	// 	return errors.New("course not found or unauthorized")
+	// }
 	return nil
 }

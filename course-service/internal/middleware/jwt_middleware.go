@@ -4,11 +4,9 @@ import (
 	"course-service/internal/utils"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func AuthMiddleware() gin.HandlerFunc {
@@ -45,49 +43,49 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func JWTAuth() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var jwtKey = []byte(os.Getenv("JWT_SECRET"))
+// func JWTAuth() gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		var jwtKey = []byte(os.Getenv("JWT_SECRET"))
 
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing Authorization header"})
-			return
-		}
+// 		authHeader := c.GetHeader("Authorization")
+// 		if authHeader == "" {
+// 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing Authorization header"})
+// 			return
+// 		}
 
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+// 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		claims := jwt.MapClaims{}
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			return jwtKey, nil
-		})
-		if err != nil || !token.Valid {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-			return
-		}
+// 		claims := jwt.MapClaims{}
+// 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+// 			return jwtKey, nil
+// 		})
+// 		if err != nil || !token.Valid {
+// 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+// 			return
+// 		}
 
-		// ✅ ดึง user_id
-		userIDFloat, ok := claims["user_id"].(float64)
-		if !ok {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token payload: missing user_id"})
-			return
-		}
-		userID := uint(userIDFloat)
+// 		// ✅ ดึง user_id
+// 		userIDFloat, ok := claims["user_id"].(float64)
+// 		if !ok {
+// 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token payload: missing user_id"})
+// 			return
+// 		}
+// 		userID := uint(userIDFloat)
 
-		// ✅ ดึง role (string) จาก token
-		role, ok := claims["role"].(string)
-		if !ok {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token payload: missing role"})
-			return
-		}
+// 		// ✅ ดึง role (string) จาก token
+// 		role, ok := claims["role"].(string)
+// 		if !ok {
+// 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token payload: missing role"})
+// 			return
+// 		}
 
-		// ✨ เก็บลง context
-		c.Set("user_id", userID)
-		c.Set("role", role)
+// 		// ✨ เก็บลง context
+// 		c.Set("user_id", userID)
+// 		c.Set("role", role)
 
-		c.Next()
-	}
-}
+// 		c.Next()
+// 	}
+// }
 
 
 func AdminAuth() gin.HandlerFunc {
