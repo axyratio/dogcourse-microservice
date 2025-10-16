@@ -27,36 +27,28 @@ func isAdmin(c *gin.Context) bool {
 	return s == "admin"
 }
 
-func GetBooked(c *gin.Context) {
-	// ต้องมี AuthMiddleware ที่ set("user_id", <uint>) ไว้ก่อน
-	val, ok := c.Get("user_id")
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error":"unauthorized"})
-		return
-	}
-	uid, ok := val.(uint)
-	if !ok || uid == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error":"invalid user_id"})
+func CheckCourseBooked(c *gin.Context) {
+	courseID := c.Param("id")
+
+	// ต้องมี middleware แปะ user_id ไว้ก่อนหน้า
+	userID := c.GetUint("user_id")
+	if userID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	// รับ course_id จาก param
-	cidStr := c.Param("id")
-	cidU64, err := strconv.ParseUint(cidStr, 10, 64)
-	if err != nil || cidU64 == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error":"invalid course_id"})
-		return
-	}
-	courseID := uint(cidU64)
-
-	// เช็กว่ามี booking ของ "user นี้" กับ "course นี้" ไหม
-	// จะเลือกกรอง status เพิ่มเติม (เช่น ไม่เอา CANCELLED) ก็เติม where ต่อได้
-	exists, err := repositories.ExistsBookingByUserAndCourse(uid, courseID)
+	booked, err := repositories.IsCourseBookedByUser(courseID, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error":"check booking failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ไม่สามารถตรวจสอบสถานะการจองได้"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"booked": exists})
+
+	fmt.Println(userID)
+	fmt.Println(courseID)
+	fmt.Println(booked)
+
+	// ตอบกลับรูปแบบที่ client ของคุณคาดหวัง: { "booked": bool }
+	c.JSON(http.StatusOK, gin.H{"booked": booked})
 }
 
 
