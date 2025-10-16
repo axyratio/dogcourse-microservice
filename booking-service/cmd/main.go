@@ -17,10 +17,11 @@ func main() {
 	}
 
 	db := config.ConnectDB()
-	db.AutoMigrate(&models.Booking{})
+	db.AutoMigrate(&models.Booking{}, models.BookingDog{})
 
 	r := gin.Default()
 	routes.BookingRoutes(r)
+	routes.ApproveRoutes(r)
 
 	// Health check
 	r.GET("/health", func(c *gin.Context) {

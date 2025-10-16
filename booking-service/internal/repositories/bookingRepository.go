@@ -1,34 +1,66 @@
 package repositories
 
 import (
-	"fmt"
 	"booking-service/config"
 	"booking-service/internal/models"
+
 	"time"
 
 	"gorm.io/gorm"
 )
 
-func GetBookings(bookings *[]models.Booking) error {
-	result := config.DB.
-		Preload("User", func(db *gorm.DB) *gorm.DB {
-			return db.Select("user_id", "name", "last_name", "email", "role_id", "created_at", "updated_at")
-		}).
-		Preload("Dogs").
-		Preload("Dogs.User", func(db *gorm.DB) *gorm.DB {
-			return db.Select("user_id", "name", "last_name", "email", "role_id", "created_at", "updated_at")
-		}).
-		Preload("Course").
-		Find(bookings)
 
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
-	}
-	return nil
+func ExistsBookingByUserAndCourse(userID, courseID uint) (bool, error) {
+	var count int64
+	err := config.DB.Model(&models.Booking{}).
+		Where("user_id = ? AND course_id = ?", userID, courseID).
+		Count(&count).Error
+	return count > 0, err
 }
+
+// mockup data res
+func GetBookingByID(id uint) (*models.Booking, error) {
+	var booking models.Booking
+
+	// ดึงข้อมูลจาก DB
+	if err := config.DB.First(&booking, id).Error; err != nil {
+		return nil, err
+	}
+
+	return &booking, nil
+}
+
+
+func GetBookings() ([]models.Booking, error) {
+	var items []models.Booking
+	if err := config.DB.
+		Order("booking_id DESC").
+		Find(&items).Error; err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+func GetBookingsByUserID(userID uint) ([]models.Booking, error) {
+	var items []models.Booking
+	if err := config.DB.
+		Where("user_id = ?", userID).
+		Order("booking_id DESC").
+		Find(&items).Error; err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+
+func GetBookingDogsByBookingID(bookingID uint) ([]models.BookingDog, error) {
+	var bookingDogs []models.BookingDog
+	if err := config.DB.Where("booking_id = ?", bookingID).Find(&bookingDogs).Error; err != nil {
+		return nil, err
+	}
+	return bookingDogs, nil
+}
+
 
 
 func CreateBooking(booking *models.Booking) error {
@@ -36,52 +68,31 @@ func CreateBooking(booking *models.Booking) error {
 }
 
 
-func CreateBookingWithDogs(booking *models.Booking, dogIDs []uint, dogAges []string) (*models.Booking, error) {
-	if len(dogIDs) == 0 || len(dogIDs) != len(dogAges) {
-		return nil, fmt.Errorf("invalid dog arrays")
-	}
 
-	err := config.DB.Transaction(func(tx *gorm.DB) error {
-		// สร้าง booking
-		if err := tx.Create(booking).Error; err != nil {
-			return err
-		}
+func CreateBookingWithDogs(booking *models.Booking, dogIDs []uint, dogAges []float64) (*models.Booking, error) {
+	tx := config.DB.Begin()
 
-		// สร้าง booking_dogs
-		for i, dogID := range dogIDs {
-			bd := models.BookingDog{
-				BookingID: booking.BookingID,
-				DogID:     dogID,
-				DogAge:    dogAges[i],
-			}
-			if err := tx.Create(&bd).Error; err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
+	// บันทึก booking หลัก
+	if err := tx.Create(booking).Error; err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
-	// ✅ preload หลังจากสร้างเสร็จ
-	var created models.Booking
-	err = config.DB.
-		Preload("User", func(db *gorm.DB) *gorm.DB {
-    return db.Select("user_id", "name", "last_name", "email", "role_id", "created_at", "updated_at")
-}).
-		// ✅ ใช้ alias 'bd' แล้วบังคับใช้ชื่อคอลัมน์จริง 'booking_id'
-		Preload("Dogs", func(db *gorm.DB) *gorm.DB {
-			return db.Joins("JOIN booking_dogs AS bd ON bd.dog_id = dogs.dog_id").
-				Where("bd.booking_id = ?", booking.BookingID)
-		}).
-		First(&created, booking.BookingID).Error
-
-	if err != nil {
-		return booking, fmt.Errorf("created booking but preload failed: %v", err)
+	// บันทึก booking_dog
+	for i, dogID := range dogIDs {
+		bookingDog := models.BookingDog{
+			BookingID: booking.BookingID,
+			DogID:     dogID,
+			DogAge:    dogAges[i],
+		}
+		if err := tx.Create(&bookingDog).Error; err != nil {
+			tx.Rollback()
+			return nil, err
+		}
 	}
 
-	return &created, nil
+	tx.Commit()
+	return booking, nil
 }
 
 // GetBookingByIDWithPreload
@@ -128,7 +139,7 @@ func ApproveBooking(id string) (*models.Booking, error) {
     }
 
     now := time.Now()
-    booking.Status = "APPROVED"
+    booking.SlipStatus = "APPROVED"
     booking.CompleteAt = &now
     booking.CancelAt = nil
 
@@ -150,7 +161,7 @@ func RejectBooking(id string) (*models.Booking, error) {
     }
 
     now := time.Now()
-    booking.Status = "REJECTED"
+    booking.SlipStatus = "REJECTED"
     booking.CancelAt = &now
     booking.CompleteAt = nil
 
