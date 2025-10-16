@@ -15,9 +15,9 @@ func ReviewRoutes(router *gin.Engine) {
 	router.GET("courses/reviews/:id", controllers.GetReview)
 
 	// User authenticated routes
-	router.POST("courses/reviews/:id",middleware.JWTAuth(), middleware.UserAuth(), controllers.CreateReview)
-	router.PATCH("courses/reviews/:id",middleware.JWTAuth(), middleware.UserAuth(), controllers.UpdateReview)
+	router.POST("courses/reviews/:id",middleware.AuthMiddleware(), controllers.CreateReview)
+	router.PATCH("courses/reviews/:id",middleware.AuthMiddleware(), controllers.UpdateReview)
 
 	// Admin authenticated routes
-	router.DELETE("courses/reviews/:id",middleware.JWTAuth(), middleware.UserAuth(), controllers.DeleteReview)
+	router.DELETE("courses/reviews/:id",middleware.AuthMiddleware(), controllers.DeleteReview)
 }
