@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  auth-db:
+    image: mysql:8.0
+    container_name: auth-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: auth_db
+    ports:
+      - "3307:3306"  # host port 3307 -> container 3306
+    volumes:
+      - auth-data:/var/lib/mysql
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    restart: always
+    env_file: ./auth-service/.env
+    depends_on:
+      - auth-db
+    ports:
+      - "8081:8081"
+
+  kong:
+    image: kong:3.3
+    container_name: kong
+    restart: always
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml  # บอก kong ใช้ไฟล์นี้
+      KONG_PROXY_ACCESS_LOG: "/dev/stdout"
+      KONG_ADMIN_ACCESS_LOG: "/dev/stdout"
+      KONG_PROXY_ERROR_LOG: "/dev/stderr"
+      KONG_ADMIN_ERROR_LOG: "/dev/stderr"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+    volumes:
+      - ./kong.yml:/etc/kong/kong.yml  # mount kong.yml เข้า container
+    ports:
+      - "8000:8000" # proxy
+      - "8001:8001" # admin
+
+volumes:
+  auth-data:
