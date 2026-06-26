@@ -15,5 +15,3 @@ type Dog struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 	// BookingDogs []BookingDog   `gorm:"foreignKey:DogID;constraint:OnDelete:CASCADE;" json:"-"`
 }
-
-
